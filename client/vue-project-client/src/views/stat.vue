@@ -3,34 +3,62 @@
     <div class="stat-card">
       <h2>统计菜单</h2>
       <select v-model="selected" @change="reset">
-        <option value="1">统计每个卡号总消费</option>
-        <option value="2">统计某一天总消费</option>
-        <option value="3">统计每个卡号充值金额</option>
-        <option value="4">统计每个卡号退款金额</option>
-        <option value="5">统计某一天充值金额</option>
-        <option value="6">统计某一天退款金额</option>
+        <option value="1">消费明细（所有卡号）</option>
+        <option value="2">消费明细（按天）</option>
+        <option value="3">充值明细（所有卡号）</option>
+        <option value="4">退款明细（所有卡号）</option>
+        <option value="5">充值明细（按天）</option>
+        <option value="6">退款明细（按天）</option>
       </select>
       <div v-if="needDate" class="form-group">
         <label>选择日期：</label>
         <input type="date" v-model="date" />
       </div>
       <button @click="fetchStat">查询</button>
-      <div v-if="result">
-        <h3>统计结果</h3>
-        <table v-if="Array.isArray(result)">
-          <thead>
-            <tr>
-              <th v-for="(v, k) in result[0]" :key="k">{{ k }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in result" :key="idx">
-              <td v-for="(v, k) in row" :key="k">{{ v }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-else>
-          <span v-for="(v, k) in result" :key="k">{{ k }}：{{ v }}</span>
+      <div v-if="records && Object.keys(records).length">
+        <div v-for="(recs, cardnumber) in records" :key="cardnumber" class="card-group">
+          <h4>卡号: {{ cardnumber }}</h4>
+          <table v-if="isConsume">
+            <thead>
+              <tr>
+                <th>上机时间</th>
+                <th>下机时间</th>
+                <th>消费金额</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rec in recs" :key="rec.start + rec.end">
+                <td>{{ rec.start }}</td>
+                <td>{{ rec.end }}</td>
+                <td>{{ rec.fee }} 元</td>
+              </tr>
+              <tr>
+                <td colspan="2"><b>总消费</b></td>
+                <td><b>{{ totalFee[cardnumber] }} 元</b></td>
+              </tr>
+            </tbody>
+          </table>
+          <table v-else>
+            <thead>
+              <tr>
+                <th>{{ isRefund ? '退款时间' : '充值时间' }}</th>
+                <th>金额</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rec in recs" :key="rec.time + rec.amount">
+                <td>{{ rec.time }}</td>
+                <td>{{ rec.amount }} 元</td>
+              </tr>
+              <tr>
+                <td><b>总{{ isRefund ? '退款' : '充值' }}</b></td>
+                <td><b>{{ isRefund ? totalRefund[cardnumber] : totalRecharge[cardnumber] }} 元</b></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="dayTotal !== undefined">
+          <b>{{ date }} 总{{ isConsume ? '消费' : (isRefund ? '退款' : '充值') }}: {{ dayTotal }} 元</b>
         </div>
       </div>
       <div v-if="message" style="color:red">{{ message }}</div>
@@ -44,57 +72,74 @@ import axios from 'axios'
 
 const selected = ref('1')
 const date = ref('')
-const result = ref(null)
+const records = ref(null)
+const totalFee = ref({})
+const totalRecharge = ref({})
+const totalRefund = ref({})
+const dayTotal = ref(undefined)
 const message = ref('')
 
 const needDate = computed(() => ['2', '5', '6'].includes(selected.value))
+const isConsume = computed(() => ['1', '2'].includes(selected.value))
+const isRefund = computed(() => ['4', '6'].includes(selected.value))
 
 function reset() {
-  result.value = null
+  records.value = null
+  totalFee.value = {}
+  totalRecharge.value = {}
+  totalRefund.value = {}
+  dayTotal.value = undefined
   message.value = ''
   date.value = ''
 }
 
 async function fetchStat() {
-  result.value = null
+  records.value = null
+  totalFee.value = {}
+  totalRecharge.value = {}
+  totalRefund.value = {}
+  dayTotal.value = undefined
   message.value = ''
   let url = ''
   let params = {}
   switch (selected.value) {
     case '1':
-      url = '/stat/consume/total'
+      url = '/stat/consume/detail'
       break
     case '2':
       if (!date.value) return message.value = '请选择日期'
-      url = '/stat/consume/day'
+      url = '/stat/consume/detail/day'
       params = { date: date.value }
       break
     case '3':
-      url = '/stat/recharge/total'
+      url = '/stat/recharge/detail'
       break
     case '4':
-      url = '/stat/refund/total'
+      url = '/stat/refund/detail'
       break
     case '5':
       if (!date.value) return message.value = '请选择日期'
-      url = '/stat/recharge/day'
+      url = '/stat/recharge/detail/day'
       params = { date: date.value }
       break
     case '6':
       if (!date.value) return message.value = '请选择日期'
-      url = '/stat/refund/day'
+      url = '/stat/refund/detail/day'
       params = { date: date.value }
       break
   }
   try {
     const res = await axios.get('http://localhost:3000' + url, { params })
     if (res.data && res.data.success) {
-      result.value = res.data.data
+      records.value = res.data.records
+      totalFee.value = res.data.totalFee || {}
+      totalRecharge.value = res.data.totalRecharge || {}
+      totalRefund.value = res.data.totalRefund || {}
+      dayTotal.value = res.data.dayTotal
     } else {
       message.value = res.data.error || '查询失败'
     }
   } catch (err) {
-    //console.log(err)
     message.value = '查询失败：' + (err.response?.data?.error || err.message)
   }
 }
@@ -102,7 +147,7 @@ async function fetchStat() {
 
 <style scoped>
 .stat-container {
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +159,7 @@ async function fetchStat() {
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(60, 120, 200, 0.12);
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -129,13 +174,6 @@ h2 {
 button {
   margin-top: 1rem;
 }
-pre {
-  background: #f6fffa;
-  padding: 1rem;
-  border-radius: 8px;
-  width: 100%;
-  overflow-x: auto;
-}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -149,5 +187,8 @@ th, td {
 th {
   background: #f0f4f8;
   color: #3a8ee6;
+}
+.card-group {
+  margin-bottom: 2.2rem;
 }
 </style> 
