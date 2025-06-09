@@ -28,8 +28,8 @@
             </thead>
             <tbody>
               <tr v-for="rec in recs" :key="rec.start + rec.end">
-                <td>{{ rec.start }}</td>
-                <td>{{ rec.end }}</td>
+                <td>{{ formatTime(rec.start) }}</td>
+                <td>{{ formatTime(rec.end) }}</td>
                 <td>{{ rec.fee }} 元</td>
               </tr>
               <tr>
@@ -47,7 +47,7 @@
             </thead>
             <tbody>
               <tr v-for="rec in recs" :key="rec.time + rec.amount">
-                <td>{{ rec.time }}</td>
+                <td>{{ formatTime(rec.time) }}</td>
                 <td>{{ rec.amount }} 元</td>
               </tr>
               <tr>
@@ -69,6 +69,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import dayjs from 'dayjs'
 
 const selected = ref('1')
 const date = ref('')
@@ -82,6 +83,14 @@ const message = ref('')
 const needDate = computed(() => ['2', '5', '6'].includes(selected.value))
 const isConsume = computed(() => ['1', '2'].includes(selected.value))
 const isRefund = computed(() => ['4', '6'].includes(selected.value))
+
+function formatTime(val) {
+  // 兼容字符串和Date对象，输出标准可读格式
+  if (!val) return ''
+  const d = dayjs(val)
+  if (!d.isValid()) return val
+  return d.format('YYYY-MM-DD HH:mm:ss')
+}
 
 function reset() {
   records.value = null
