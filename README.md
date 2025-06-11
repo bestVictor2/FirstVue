@@ -44,30 +44,49 @@ cvue/
 └── ...
 ```
 
-## 部署与运行
+## 一键部署与运行
 
-### 数据库
+本项目已支持一键自动化部署，无需手动配置数据库或分别安装依赖。只需按照以下步骤操作：
 
-1. 安装 MySQL，创建数据库 `vuedb`，并导入相关表结构（如 card、login_log、recharge_log、refund_log 等）。
-2. 修改 `server/db.js` 中的数据库连接配置（如用户名、密码、数据库名等）。
+### 环境准备
 
-### 后端
+1. 安装 [Node.js](https://nodejs.org/)。
+2. 安装 [MySQL](https://dev.mysql.com/downloads/installer/)。
+3. （可选）安装 [Git](https://git-scm.com/) 用于拉取项目代码。
 
-```bash
-cd server
-npm install
-node index.js
-```
-默认监听端口：`3000`
+### 获取项目代码
 
-### 前端
+- 通过 Git 克隆项目（推荐）：
+  ```bash
+  git clone https://github.com/bestVictor2/FirstVue.git
+  ```
+- 或直接下载压缩包并解压。
 
-```bash
-cd client/vue-project-client
-npm install
-npm run dev
-```
-默认访问地址：`http://localhost:5173`
+### 一键启动
+
+1. 打开命令行（cmd 或 PowerShell）。
+2. 进入项目根目录，例如：
+   ```bash
+   cd /c/Users/你的用户名/Desktop/cvue
+   ```
+3. 运行批处理文件：
+   ```bash
+   start_all.bat
+   ```
+4. 按提示在终端输入你的 MySQL 用户名和密码。
+5. 程序会自动：
+   - 安装所有依赖（根目录、后端、前端）
+   - 初始化数据库（自动建库建表）
+   - 启动后端和前端服务
+   - 自动打开前端网页（http://localhost:5173）
+
+### 常见问题
+
+- **数据库连接失败**：请确认 MySQL 服务已启动，用户名和密码输入正确。
+- **端口被占用**：请关闭占用 3000（后端）或 5173（前端）的程序，或修改端口配置。
+- **依赖安装失败**：请检查 Node.js 是否安装，网络是否正常。
+
+如有其他问题，请参考命令行输出的提示信息，或联系开发者。
 
 ## 特色与亮点
 
