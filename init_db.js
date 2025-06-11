@@ -10,6 +10,10 @@ async function main() {
     { type: 'password', name: 'password', message: '请输入MySQL密码:', mask: '*' }
   ]);
 
+  // 写入 .env 文件
+  const envContent = `DB_USER=${answers.user}\nDB_PASSWORD=${answers.password}\nDB_NAME=vuedb\n`;
+  fs.writeFileSync(path.join(__dirname, 'server', '.env'), envContent);
+
   const connection = await mysql.createConnection({
     host: 'localhost',
     user: answers.user,

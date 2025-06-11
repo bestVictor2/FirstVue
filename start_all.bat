@@ -1,7 +1,8 @@
 @echo off
 REM Install root dependencies
 echo Installing root dependencies...
-npm install inquirer mysql2
+npm uninstall inquirer
+npm install inquirer@8 mysql2 dotenv
 
 REM Install backend dependencies
 echo Installing backend dependencies...
@@ -26,7 +27,7 @@ IF %ERRORLEVEL% NEQ 0 (
 
 REM Start backend
 echo Starting backend...
-start cmd /k "cd server && npm run dev"
+start cmd /k "cd server && node index.js"
 
 REM Start frontend
 echo Starting frontend...
